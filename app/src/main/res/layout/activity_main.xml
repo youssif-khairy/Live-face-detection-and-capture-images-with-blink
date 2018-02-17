@@ -6,11 +6,23 @@
     tools:context="com.example.khairy.gp.MainActivity"
     android:orientation="vertical">
 
-    <SurfaceView
-        android:id="@+id/surfaceview"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
-    </SurfaceView>
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        <SurfaceView
+            android:layout_alignParentTop="true"
+            android:id="@+id/surfaceview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+        </SurfaceView>
+        <SurfaceView
+            android:layout_alignParentTop="true"
+            android:id="@+id/transparentview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+        </SurfaceView>
+    </RelativeLayout>
 
 
 </LinearLayout>
