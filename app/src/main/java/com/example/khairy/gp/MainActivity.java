@@ -1,11 +1,14 @@
 package com.example.khairy.gp;
 
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
@@ -26,17 +29,22 @@ import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
+import com.google.android.gms.vision.face.Landmark;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.jar.Manifest;
 
-public class MainActivity extends AppCompatActivity implements Detector.Processor,CameraSource.PictureCallback {
+public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback,Detector.Processor,CameraSource.PictureCallback {
 
     CameraSource cameraSource;
     FaceDetector faceDetector;
     SurfaceView surfaceView;
+    SurfaceView transparentView;
     final int CameraID = 1001;
+    int  deviceHeight,deviceWidth;
 
     boolean closed_eyes = false,captured = true;
     @Override
@@ -45,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements Detector.Processo
         setContentView(R.layout.activity_main);
 
         surfaceView = (SurfaceView)findViewById(R.id.surfaceview);
+        transparentView = (SurfaceView)findViewById(R.id.transparentview);
+
         faceDetector = new FaceDetector.Builder(getApplicationContext())
                         .setTrackingEnabled(true)
                         .setLandmarkType(FaceDetector.ALL_LANDMARKS)
@@ -57,86 +67,44 @@ public class MainActivity extends AppCompatActivity implements Detector.Processo
                 .setRequestedFps(30)
                 .build();
 
-        surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(SurfaceHolder surfaceHolder) {
-                try
-                {
-                    if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
-                        ActivityCompat.requestPermissions(MainActivity.this,new String[]{android.Manifest.permission.CAMERA},CameraID);
-                        return;
-                    }
+        surfaceView.getHolder().addCallback(this);
+        transparentView.getHolder().addCallback(this);
 
-                    cameraSource.start(surfaceView.getHolder());
-                } catch (IOException e) {
+        transparentView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+        transparentView.setZOrderMediaOverlay(true);
 
-                }
-            }
-
-            @Override
-            public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-                cameraSource.stop();
-            }
-        });
+        deviceWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+        deviceHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
 
 
         faceDetector.setProcessor(this);
-//        final Bitmap myBitmap = BitmapFactory.decodeResource(getApplicationContext().getResources(),R.drawable.image);
-//        iv.setImageBitmap(myBitmap);
-//
-//
-//        final Paint rectPaint = new Paint();
-//
-//        rectPaint.setStrokeWidth(5);
-//        rectPaint.setColor(Color.WHITE);
-//        rectPaint.setStyle(Paint.Style.STROKE);
-//
-//        final Bitmap tempBitmap = Bitmap.createBitmap(myBitmap.getWidth(),myBitmap.getHeight(), Bitmap.Config.RGB_565);
-//        final Canvas canvas  = new Canvas(tempBitmap);
-//        canvas.drawBitmap(myBitmap,0,0,null);
-//
-//        b.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//
-//                FaceDetector faceDetector = new FaceDetector.Builder(getApplicationContext())
-//                        .setTrackingEnabled(false)
-//                        .setLandmarkType(FaceDetector.ALL_LANDMARKS)
-//                        .setMode(FaceDetector.FAST_MODE)
-//                        .build();
-//
-//
-//
-//                if(!faceDetector.isOperational())
-//                {
-//                    Toast.makeText(MainActivity.this, "Face Detector could not be set up on your device", Toast.LENGTH_SHORT).show();
-//                    return;
-//                }
-//                Frame frame = new Frame.Builder().setBitmap(myBitmap).build();
-//                SparseArray<Face> sparseArray = faceDetector.detect(frame);
-//
-//                for(int i=0;i<sparseArray.size();i++)
-//                {
-//                    Face face = sparseArray.valueAt(i);
-//                    float x1=face.getPosition().x;
-//                    float y1 =face.getPosition().y;
-//                    float x2 = x1+face.getWidth();
-//                    float y2=y1+face.getHeight();
-//                    RectF rectF = new RectF(x1,y1,x2,y2);
-//                    canvas.drawRoundRect(rectF,2,2,rectPaint);
-//
-//                }
-//
-//                iv.setImageDrawable(new BitmapDrawable(getResources(),tempBitmap));
-//            }
-//        });
 
 
+
+    }
+    @Override
+    public void surfaceCreated(SurfaceHolder surfaceHolder) {
+        try
+        {
+            if (ActivityCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(MainActivity.this,new String[]{android.Manifest.permission.CAMERA},CameraID);
+                return;
+            }
+
+            cameraSource.start(surfaceView.getHolder());
+        } catch (IOException e) {
+
+        }
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+        cameraSource.stop();
     }
 
 
@@ -161,8 +129,6 @@ public class MainActivity extends AppCompatActivity implements Detector.Processo
                 }
             }
 
-            // other 'switch' lines to check for other
-            // permissions this app might request
         }
     }
 
@@ -179,9 +145,24 @@ public class MainActivity extends AppCompatActivity implements Detector.Processo
 
 
         if (detectedFaces.size()!=0){
+
+
             for (int i=0;i<detectedFaces.size();i++){
                final Face face = (Face)detectedFaces.valueAt(i);
 
+                try {
+                    synchronized (surfaceView.getHolder()){
+                        DrawRectangle(face.getPosition().x,face.getPosition().y,face.getWidth(),face.getHeight());
+                    }
+                }catch (Exception e){
+
+                }
+//                for (Landmark landmark : face.getLandmarks()) {
+//                    int x = (int) (landmark.getPosition().x);
+//                    int y = (int) (landmark.getPosition().y);
+//                    float radius = 10.0f;
+//                    DrawCircle(x, y, radius);
+//                }
 
                 if ((face.getIsLeftEyeOpenProbability() + face.getIsRightEyeOpenProbability())/2.0f< 0.3   && face.getIsLeftEyeOpenProbability() > 0 && face.getIsRightEyeOpenProbability() > 0)
                 {
@@ -208,8 +189,11 @@ public class MainActivity extends AppCompatActivity implements Detector.Processo
     }
 
 
-    public void Draw(float x,float y,float Width ,float height) {
-        Canvas canvas = surfaceView.getHolder().lockCanvas(null);
+    public void DrawRectangle(float x,float y,float width,float height) {
+
+        Canvas canvas = transparentView.getHolder().lockCanvas(null);
+
+        canvas.drawColor(0, PorterDuff.Mode.CLEAR);
 
         Paint  paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
@@ -219,11 +203,11 @@ public class MainActivity extends AppCompatActivity implements Detector.Processo
 
         paint.setStrokeWidth(3);
 
-        Rect rec=new Rect((int) x,(int)y,(int)x+(int)Width,(int)y+(int)height);
+        Rect rec=new Rect((int) x,(int)y,(int) x+(int)width,(int) y+(int)height+120);
 
         canvas.drawRect(rec,paint);
 
-        surfaceView.getHolder().unlockCanvasAndPost(canvas);
+        transparentView.getHolder().unlockCanvasAndPost(canvas);
     }
 
     @Override
