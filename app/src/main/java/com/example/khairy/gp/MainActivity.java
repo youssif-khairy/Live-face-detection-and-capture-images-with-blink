@@ -203,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         paint.setStrokeWidth(3);
 
-        Rect rec=new Rect((int) x,(int)y,(int) x+(int)width,(int) y+(int)height+120);
+        Rect rec=new Rect((int) x,(int)y+150,(int) x+(int)width,(int) y+(int)height+120);
 
         canvas.drawRect(rec,paint);
 
